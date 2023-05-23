@@ -1,0 +1,72 @@
+# -*- coding: utf-8 -*-
+"""
+@title: Esercizi lezione 5 pt.2: Raster
+"""
+
+# libs
+import pandas as pd
+import rasterio
+import geopandas as gpd 
+import matplotlib.pyplot as plt
+from rasterio.plot import show
+
+
+# File CSV contenente i punti con le coordinate
+csv_file = (r"C:\geo_lab2\raster_python\points_pianosa.csv")
+# File raster da campionare
+raster_file = (r"C:\geo_lab2\raster_python\pianosa_dem.tif")
+
+df = pd.read_csv(csv_file)
+
+# Apertura del raster con rasterio
+raster = rasterio.open(raster_file)
+
+# 1) Creare il geodataframe
+# gpd.GeoDataFrame(df, geometry = gpd.points_from_xy(df['xcoord'], df['ycoord']))
+
+# Scrivere una funzione che crea il geofataframe
+
+'''
+def geo_dataframe(df):
+    geo_df = gpd.GeoDataFrame(df, geometry = gpd.points_from_xy(df['xcoord'], df['ycoord']))
+    return geo_df
+'''
+
+# 2) plot del raster
+plt.imshow(raster.read(1), cmap='gist_earth')
+
+# 2.1) plot del raster e del csv
+fig, ax = plt.subplots()
+base = show(raster, ax = ax, cmap = 'gist_earth')
+df.plot(ax = ax, color = 'red', markersize = 5)
+
+
+
+# Lista dei valori campionati
+L = []
+# Ciclo attraverso le righe del dataframe
+for index, row in df.iterrows(): # 
+    # Coordinata X e Y della riga corrente
+    x = row['xcoord']
+    y = row['ycoord']
+    # Trasformazione della coordinata in coordinate del raster
+    raster_x, raster_y = raster.index(x, y)
+    # Campionamento del valore del raster alla coordinata
+    value = raster.read(1, window = ((raster_y, raster_y + 1), (raster_x, raster_x + 1)))
+    # Aggiunta del valore alla lista dei valori campionati
+    L.append(float(value[0][0]))
+# Aggiunta dei valori al dataframe
+df['quota'] = L
+
+# scrivi il nuovo csv...
+# df.to_csv(r"C:\geo_lab2\raster_python\points_pianosa_sampled.csv", index = False)
+
+# 3) Barplot delle quote
+# fatelo voi
+'''
+plt.bar(df['luogo'], df['quota'])
+plt.xticks(rotation = 90)
+plt.title("Height barplot")
+plt.xlabel("Places")
+plt.ylabel("Sampled height")
+'''
