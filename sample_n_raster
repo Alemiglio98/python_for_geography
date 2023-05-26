@@ -1,0 +1,100 @@
+# libs
+import os
+import pandas as pd
+import rasterio
+import geopandas as gpd
+
+import matplotlib.pyplot as plt
+from rasterio.plot import show
+
+# funcz
+def geo_dataframe(df):
+    geo_df = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['xcoord'], df['ycoord']))
+    return geo_df
+
+# File CSV contenente le coordinate
+csv_file = r"C:\geo_lab2\raster_python\points_pianosa.csv"
+# Lista dei file raster da campionare
+
+rast_path = (r"C:\geo_lab2\raster_python\pianosa_tanti")
+
+
+# Apertura del file CSV con pandas
+df = pd.read_csv(csv_file)
+# geodataframe
+df = geo_dataframe(df)  # aggiunge la colonna POINT che contiene la stringa WKT
+
+# Ciclo attraverso i file raster
+for raster_file in os.listdir(rast_path):
+    # Apertura del raster con rasterio
+    raster = rasterio.open(rast_path + '\\' + raster_file)
+
+    # Lista dei valori campionati
+    L = []
+    # Ciclo attraverso le righe del dataframe
+    for index, row in df.iterrows():
+        # Coordinata X e Y della riga corrente
+        x = row['xcoord']
+        y = row['ycoord']
+        # Trasformazione della coordinata in coordinate del raster
+        raster_x, raster_y = raster.index(x, y)
+        # Campionamento del valore del raster alla coordinata
+        value = raster.read(1, window = ((raster_y, raster_y + 1), (raster_x, raster_x + 1)))
+        # Aggiunta del valore alla lista dei valori campionati
+        L.append(float(value[0][0]))
+    # Aggiunta dei valori al dataframe
+    column_name = "quota_" + raster_file.split(".")[0]  # Nome colonna basato sul nome del raster
+    df[column_name] = L
+
+# Salvataggio del dataframe in un file CSV
+output_csv = r"C:\geo_lab2\raster_python\output.csv"
+#df.to_csv(output_csv, index = False)
+
+'''
+fig, ax = plt.subplots()
+base = show(raster, ax = ax, cmap = 'gist_earth')
+df.plot(ax = ax, color = 'red', markersize = 5)
+'''
+
+'''
+plt.bar(df['luogo'], df['quota_pianosa_dem_1'])
+plt.xticks(rotation = 90)
+plt.title("Height barplot")
+plt.xlabel("Places")
+plt.ylabel("Height")
+
+'''
+
+
+plt.figure(figsize = (20, 20), tight_layout = True) # figsize(h, v)
+plt.suptitle('Plot vari...\n', size = 80)
+
+plt.subplot(2,2,1) # righe, colonne e numero plot
+plt.title('Pianosa DEM 1 Quota', size = 40)
+plt.bar(df['luogo'], df['quota_pianosa_dem_1'], color = 'red')
+plt.xticks(rotation = 90, size = 20)
+plt.xlabel('Places', size = 20)
+plt.ylabel('Height (m)', size = 20)
+
+
+plt.subplot(2,2,2)
+plt.title('Pianosa DEM 2 Quota', size = 40)
+plt.bar(df['luogo'], df['quota_pianosa_dem_2'], color = 'orange')
+plt.xticks(rotation = 90, size = 20)
+plt.xlabel('Places', size = 20)
+plt.ylabel('Height (m)', size = 20)
+
+plt.subplot(2,2,3)
+plt.title('Pianosa DEM 3 Quota', size = 40)
+plt.bar(df['luogo'], df['quota_pianosa_dem_3'], color = 'green')
+plt.xticks(rotation = 90, size = 20)
+plt.xlabel('Places', size = 20)
+plt.ylabel('Height (m)', size = 20)
+
+
+plt.subplot(2,2,4)
+plt.title('Pianosa DEM 4 Quota', size = 40)
+plt.bar(df['luogo'], df['quota_pianosa_dem_4'])
+plt.xticks(rotation = 90, size = 20)
+plt.xlabel('Places', size = 20)
+plt.ylabel('Height (m)', size = 20)
