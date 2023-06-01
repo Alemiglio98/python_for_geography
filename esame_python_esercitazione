@@ -1,0 +1,50 @@
+# script lezione_6
+
+# libs
+import os
+import pandas as pd
+import rasterio
+import geopandas as gpd
+
+import matplotlib.pyplot as plt
+from rasterio.plot import show
+
+# funzione per creare il geodataframe
+def geo_dataframe(df):
+    geo_df = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['xcoord'], df['ycoord']))
+    return geo_df
+
+# File CSV contenente le coordinate
+csv_file = (r"path_del_vostro_csv\file.csv")
+# Lista dei file raster da campionare
+rast_path = (r"path_cartella_rasters") # path di una cartella e non dei files!!!
+
+# Apertura del file CSV con pandas
+df = pd.read_csv(csv_file)
+# geodataframe
+df = geo_dataframe(df)  # aggiunge la colonna POINT che contiene la stringa WKT
+
+# Ciclo attraverso i file raster
+for raster_file in os.listdir(rast_path): # per tutti i raster in quella cartella...
+    # apro il singolo raster con rasterio
+    raster = rasterio.open(rast_path + '\\' + raster_file)
+
+    L = [] # lista che conterrà tutti i valori campionati
+    # faccio un ciclo attraverso le righe del dataframe
+    for index, row in df.iterrows():
+        # coordinata X e Y della riga corrente del dataframe
+        x = row['xcoord']
+        y = row['ycoord']
+        # traformo la coordinata in coordinate raster
+        raster_x, raster_y = raster.index(x, y)
+        # campiono il valore del raster in quella coordinata
+        value = raster.read(1, window = ((raster_y, raster_y + 1), (raster_x, raster_x + 1)))
+        # aggiungo il valore alla lista dei valori campionati
+        L.append(float(value[0][0]))
+    # aggiungo i valori al dataframe
+    column_name = "quota_" + raster_file.split(".")[0]  # nome colonna basato sul nome del raster
+    df[column_name] = L
+
+# salvo il nuovo dataframe in un nuovo file CSV
+output_csv = r"C:\geo_lab2\raster_python\output.csv" # path to output
+#df.to_csv(output_csv, index = False)
