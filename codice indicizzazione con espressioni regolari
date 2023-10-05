@@ -1,0 +1,54 @@
+import pandas as pd
+import os
+import rasterio
+import geopandas as gpd
+import matplotlib.pyplot as plt
+from rasterio.plot import show
+import re
+import urllib.request, re
+from collections import Counter
+
+
+
+#set working directory
+
+#dir_fd = os.open("C:/Users/aless/OneDrive/Documenti/codici_python", os.O_RDONLY)
+dir_list = os.listdir("C:/Users/aless/OneDrive/Documenti/codici_python")
+tutteleparole = []
+
+path="C:/Users/aless/OneDrive/Documenti/codici_python"
+for nomeFile in dir_list:
+    pathAssoluto = path+"/"+nomeFile
+    fileCorrente = open(pathAssoluto,mode="r",errors="ignore")
+    lines = fileCorrente.readlines()
+    fileCorrente.close()
+    for riga in lines:
+        parole = re.split(r"\W+",riga)
+        for parola in parole:
+            tutteleparole.append(parola)
+             
+# rimuoviamo tutte le stringhe vuote
+while("" in tutteleparole):
+    tutteleparole.remove("")
+    
+#rimuoviamo i duplicati, viene gratis creando un dizionario...la key è sempre univoca per definizione
+
+dictionary = dict.fromkeys(tutteleparole)
+    
+    
+print(dictionary) 
+
+for key in dictionary.keys():
+    print("Chiave "+key)
+    fileMatch = []
+    for nomeFile in dir_list:
+        pathAssoluto = path+"/"+nomeFile
+        fileCorrente = open(pathAssoluto,mode="r",errors="ignore")
+        
+        if key in fileCorrente.read():
+            print("Trovata nel file "+nomeFile)
+            fileMatch.append(nomeFile)
+    dictionary.update({key:fileMatch})
+        
+
+print(dictionary) 
