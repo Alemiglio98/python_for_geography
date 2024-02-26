@@ -1,0 +1,53 @@
+#resample whith gdal
+from osgeo import gdal
+
+def resample_with_gdal(input_raster, output_raster, target_resolution):
+    gdal.Warp(output_raster, input_raster, xRes=target_resolution, yRes=target_resolution, resampleAlg=gdal.GRA_Bilinear)
+
+# Example usage
+input_raster = "input.tif"
+output_raster = "output.tif"
+target_resolution = 30  # Target resolution in meters
+resample_with_gdal(input_raster, output_raster, target_resolution)
+
+
+
+#resample whith rasterio
+import rasterio
+from rasterio.enums import Resampling
+
+def resample_with_rasterio(input_raster, output_raster, target_resolution):
+    with rasterio.open(input_raster) as src:
+        # Resample data to target resolution
+        data = src.read(
+            out_shape=(
+                src.count,
+                int(src.height * src.transform.a / target_resolution), #trasfom.a (indicate che x dimension of the pixel)
+                int(src.width * src.transform.a / target_resolution)
+            ),
+            resampling=Resampling.bilinear
+        )
+
+        # Update transform and metadata
+        transform = src.transform * src.transform.scale(
+            (src.width / data.shape[-1]), #This calculates the scaling factor for the X direction. It divides the original width of the raster by the new width of the resampled data
+            (src.height / data.shape[-2]) # [-n] indicate the last element of the tuple (max width/height)
+        )
+
+        profile = src.profile
+        profile.update({
+            'dtype': rasterio.float32,  # Adjust dtype if necessary
+            'height': data.shape[1],
+            'width': data.shape[2],
+            'transform': transform
+        })
+
+        # Write resampled data
+        with rasterio.open(output_raster, 'w', **profile) as dst:
+            dst.write(data)
+
+# Example usage
+input_raster = "input.tif"
+output_raster = "output.tif"
+target_resolution = 30  # Target resolution in meters
+resample_with_rasterio(input_raster, output_raster, target_resolution)
