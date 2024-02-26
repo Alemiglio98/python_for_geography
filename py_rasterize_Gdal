@@ -1,0 +1,38 @@
+import numpy as np
+from osgeo import gdal, ogr
+
+# Example point data (replace with your own data) (e.g csv data)
+points = np.array([[0, 0, 100],
+                   [1, 0, 150],
+                   [0, 1, 200],
+                   [1, 1, 250]])
+
+output_path = "elevation_raster.tif"
+pixel_size = 0.1  # Assuming each point represents 0.1 units (e.g., meters)
+no_data_value = -9999  # Define your NoData value
+
+def create_raster_from_points(points, output_path, pixel_size, no_data_value):
+    # Extracting extent of points
+    x_min, x_max = min(points[:,0]), max(points[:,0] )#"take all rows of the points array, but only the elements from the first column".
+    y_min, y_max = min(points[:,1]), max(points[:,1]) #"take all rows of the points array, but only the elements from the second column".
+    z_min, z_max = min(points[:,2], max(points[:,2] #"take all rows of the points array, but only the elements from the third column".
+    
+    # Calculate dimensions of the raster
+    x_res = int((x_max - x_min) / pixel_size) + 1
+    y_res = int((y_max - y_min) / pixel_size) + 1
+    
+    # Create an empty raster
+    target_ds = gdal.GetDriverByName('GTiff').Create(output_path, x_res, y_res, 1, gdal.GDT_Float32) #1 stands for band n, then datatype
+    target_ds.SetGeoTransform((x_min, pixel_size, 0, y_max, 0, -pixel_size)) #rotation set to 0
+    
+    # Set NoData value
+    band = target_ds.GetRasterBand(1)
+    band.SetNoDataValue(no_data_value)
+    
+    # Fill the raster with point values
+    gdal.RasterizeLayer(target_ds, [1], points_layer, burn_values=[2]) # target, band, pointlayer, valut to fill the grid
+    
+    target_ds = None  # Close the raster
+
+# Call the function to create the raster
+create_raster_from_points(points, output_path, pixel_size, no_data_value)
