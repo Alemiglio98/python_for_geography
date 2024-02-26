@@ -1,0 +1,36 @@
+import numpy as np
+import rasterio
+from rasterio.transform import from_origin
+
+# Example point data (replace with your own data)
+points = np.array([[0, 0, 100],
+                   [1, 0, 150],
+                   [0, 1, 200],
+                   [1, 1, 250]])
+
+output_path = "elevation_raster.tif"
+pixel_size = 0.1  # Assuming each point represents 0.1 units (e.g., meters)
+no_data_value = -9999  # Define your NoData value
+
+def create_raster_from_points(points, output_path, pixel_size, no_data_value):
+    # Extracting extent of points
+    x_min, x_max = min(points[:,0]), max(points[:,0])
+    y_min, y_max = min(points[:,1]), max(points[:,1])
+    
+    # Calculate dimensions of the raster
+    x_res = int((x_max - x_min) / pixel_size) + 1
+    y_res = int((y_max - y_min) / pixel_size) + 1
+    
+    # Create an empty raster # the main difference whith GDAL
+    with rasterio.open(output_path, 'w', driver='GTiff', 
+                       width=x_res, height=y_res, count=1,# count for bands
+                       dtype=np.float32, nodata=no_data_value,
+                       transform=from_origin(x_min, y_max, pixel_size, pixel_size)) as dst:
+        # Fill the raster with point values
+        for point in points:
+            col = int((point[0] - x_min) / pixel_size)
+            row = int((y_max - point[1]) / pixel_size)
+            dst.write(point[2], 1, window=((row, row+1), (col, col+1)))
+
+# Call the function to create the raster
+create_raster_from_points(points, output_path, pixel_size, no_data_value)
